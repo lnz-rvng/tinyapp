@@ -30,6 +30,9 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars)
 })
 
+// TODO: Adding a second route and template
+
+
 // connects to the port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`) // keeps track of what port we're connected
