@@ -24,6 +24,12 @@ app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n')
 })
 
+// TODO: add a new route handler for urls
+app.get('/urls', (req, res) => {
+  const templateVars = { urls: urlDatabase }
+  res.render('urls_index', templateVars)
+})
+
 // connects to the port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`) // keeps track of what port we're connected
