@@ -11,9 +11,14 @@ app.get('/', (req, res) => {
   res.send('Hello!')
 })
 
-// added routes
+// added route - /urls.json
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase)
+})
+
+// added a new route = /hello
+app.get('/hello', (req, res) => {
+  res.send('<html><body>Hello <b>World</b></body></html>\n')
 })
 
 // connects to the port
