@@ -12,9 +12,9 @@ const urlDatabase = {
 };
 
 // generate a short random url id
-const generateRandomString = () => { 
+const generateRandomString = () => {
   // Define the character set from which to generate the random string
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let randomString = ''; // Initialize an empty string to store the random string
   for (let i = 0; i < 6; i++) {
     const randomIndex = Math.floor(Math.random() * charset.length); // Generate a random index within the range of the character set length
@@ -56,20 +56,20 @@ app.get('/urls/:id', (req, res) => {
 
 // Added a POST route to receive the form submission
 app.post('/urls', (req, res) => {
-  const longURL = req.body.longURL
-  const shortURL = generateRandomString()
-  urlDatabase[shortURL] = longURL
-  res.redirect(`/urls/${shortURL}`)
+  const longURL = req.body.longURL;
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 // redirect short URLs
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id]
+  const longURL = urlDatabase[req.params.id];
   if (longURL) {
     res.redirect(longURL);
   } else {
     res.statusCode = 404;
-    res.send('URL not found')
+    res.send('URL not found');
   }
 });
 
