@@ -62,7 +62,16 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${shortURL}`)
 });
 
-
+// redirect short URLs
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id]
+  if (longURL) {
+    res.redirect(longURL);
+  } else {
+    res.statusCode = 404;
+    res.send('URL not found')
+  }
+});
 
 // connects to the port
 app.listen(PORT, () => {
