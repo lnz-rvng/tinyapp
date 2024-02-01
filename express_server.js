@@ -2,9 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
-// setting ejs as the view engine
+
 app.use(express.urlencoded({ extended: true }));
-app.set('view engine', 'ejs');
+app.set('view engine', 'ejs'); // setting ejs as the view engine
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -12,16 +12,12 @@ const urlDatabase = {
 };
 
 // generate a short random url id
-const generateRandomString = () => {
-
+const generateRandomString = () => { 
   // Define the character set from which to generate the random string
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
-  // Initialize an empty string to store the random string
-  let randomString = '';
+  let randomString = ''; // Initialize an empty string to store the random string
   for (let i = 0; i < 6; i++) {
-    // Generate a random index within the range of the character set length
-    const randomIndex = Math.floor(Math.random() * charset.length);
+    const randomIndex = Math.floor(Math.random() * charset.length); // Generate a random index within the range of the character set length
     randomString += charset[randomIndex];
   }
   return randomString;
