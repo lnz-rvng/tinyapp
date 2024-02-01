@@ -73,6 +73,15 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
+// POST route that removes a URL
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  if (urlDatabase[id]) {
+    delete urlDatabase[i];
+    res.redirect('/urls');
+  }
+})
+
 // connects to the port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
