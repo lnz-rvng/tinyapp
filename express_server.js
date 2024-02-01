@@ -80,9 +80,19 @@ app.post('/urls/:id/delete', (req, res) => {
     delete urlDatabase[id];
     res.redirect('/urls');
     return;
-  }   
+  }
 });
 
+// POST route that updates a URL
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const newLongURL = req.body.longURL;
+  if (urlDatabase[id]) {
+    urlDatabase[id] = newLongURL;
+    res.redirect('/urls');
+    return;
+  }
+});
 // connects to the port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
