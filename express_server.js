@@ -100,5 +100,11 @@ app.post('/urls/:id', (req, res) => {
 
 // The Login Route
 app.post('/login', (req, res) => {
-  
+  const { username } = req.body
+  if (username) {
+    res.cookie('username', username)
+    res.redirect('/urls')
+  } else {
+    res.status(400).send('testtesttesttest')
+  }
 })
