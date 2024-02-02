@@ -21,7 +21,7 @@
 
     <% if (username) { %>
       <div class="form-group mb-2">Logged in as: <%= username %></div>
-      <form action="/urls" method="post">
+      <form action="/logout" method="post">
         <button type="submit" class="btn btn-primary">Logout</button>
       </form>
       <% }  else { %>
