@@ -45,7 +45,7 @@ app.get('/hello', (req, res) => {
 
 // added a new route handler for urls
 app.get('/urls', (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     username: req.cookies["username"]
   };
@@ -55,7 +55,7 @@ app.get('/urls', (req, res) => {
 
 // added a GET route to show the form
 app.get('/urls/new', (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     username: req.cookies["username"]
   };
 
@@ -64,12 +64,12 @@ app.get('/urls/new', (req, res) => {
 
 // Added a second route and template
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { 
-    id: req.params.id, 
+  const templateVars = {
+    id: req.params.id,
     longURL: urlDatabase[req.params.id],
     username: req.cookies["username"]
-   };
-   
+  };
+
   res.render('urls_show', templateVars);
 });
 
@@ -122,4 +122,10 @@ app.post('/login', (req, res) => {
   } else {
     res.status(400).send('Username not required');
   }
+});
+
+// logout route
+app.post('/logout', (req, res) => {
+  res.clearCookie('username'); // clears/deletes the username cookie
+  res.redirect('/urls');
 });
