@@ -100,11 +100,11 @@ app.post('/urls/:id', (req, res) => {
 
 // The Login Route
 app.post('/login', (req, res) => {
-  const { username } = req.body
+  const { username } = req.body;
   if (username) {
-    res.cookie('username', username)
-    res.redirect('/urls')
+    res.cookie('username', username); // set the username cookie
+    res.redirect('/urls');
   } else {
-    res.status(400).send('testtesttesttest')
+    res.status(400).send('Username not required');
   }
-})
+});
