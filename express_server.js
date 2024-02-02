@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
 
@@ -7,6 +8,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
 });
 
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
@@ -43,18 +45,31 @@ app.get('/hello', (req, res) => {
 
 // added a new route handler for urls
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
+
   res.render('urls_index', templateVars);
 });
 
 // added a GET route to show the form
 app.get('/urls/new', (req, res) => {
-  res.render('urls_new');
+  const templateVars = { 
+    username: req.cookies["username"]
+  };
+
+  res.render('urls_new', templateVars);
 });
 
 // Added a second route and template
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { 
+    id: req.params.id, 
+    longURL: urlDatabase[req.params.id],
+    username: req.cookies["username"]
+   };
+   
   res.render('urls_show', templateVars);
 });
 
