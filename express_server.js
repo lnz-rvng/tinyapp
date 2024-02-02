@@ -2,6 +2,10 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
+// connects to the port
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
@@ -93,7 +97,8 @@ app.post('/urls/:id', (req, res) => {
     return;
   }
 });
-// connects to the port
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
-});
+
+// The Login Route
+app.post('/login', (req, res) => {
+  
+})
