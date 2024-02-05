@@ -1,5 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const { generateRandomString } = require('./randomString');
+const { urlDatabase } = require('./database');
 const app = express();
 const PORT = 8080;
 
@@ -11,23 +13,6 @@ app.listen(PORT, () => {
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
-
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
-// generate a short random url id
-const generateRandomString = () => {
-  // Define the character set from which to generate the random string
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let randomString = ''; // Initialize an empty string to store the random string
-  for (let i = 0; i < 6; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length); // Generate a random index within the range of the character set length
-    randomString += charset[randomIndex];
-  }
-  return randomString;
-};
 
 app.get('/', (req, res) => {
   res.send('Hello!');
@@ -120,7 +105,7 @@ app.post('/login', (req, res) => {
     res.cookie('username', username); // set the username cookie
     res.redirect('/urls');
   } else {
-    res.status(400).send('Username not required');
+    res.status(400).send('Username is required');
   }
 });
 
