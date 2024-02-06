@@ -1,8 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { generateRandomString } = require('./randomString');
-const { urlDatabase } = require('./database');
-const { users } = require('./users');
+const { generateRandomString, getUserByEmail } = require('./helpers');
+const { urlDatabase, users } = require('./database');
 const app = express();
 const PORT = 8080;
 
@@ -15,14 +14,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
-const getUserByEmail = (email) => {
-  for (const userID in users) {
-    if (users[userID].email === email) {
-      return users[userID];
-    }
-  }
-  return null;
-};
+
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -40,7 +32,8 @@ app.get('/hello', (req, res) => {
 
 // added a new route handler for urls
 app.get('/urls', (req, res) => {
-  const user = users[req.cookies.username];
+  const id = req.cookies.user_id;
+  const user = users[id];
   const templateVars = {
     urls: urlDatabase,
     user: user
@@ -51,7 +44,8 @@ app.get('/urls', (req, res) => {
 
 // added a GET route to show the form
 app.get('/urls/new', (req, res) => {
-  const user = users[req.cookies.username];
+  const id = req.cookies.user_id;
+  const user = users[id];
   const templateVars = {
     user: user
   };
@@ -61,7 +55,8 @@ app.get('/urls/new', (req, res) => {
 
 // Added a second route and template
 app.get('/urls/:id', (req, res) => {
-  const user = users[req.cookies.username];
+  const id = req.cookies.user_id;
+  const user = users[id];
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
@@ -82,12 +77,11 @@ app.post('/urls', (req, res) => {
 // redirect short URLs
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
-  if (longURL) {
-    res.redirect(longURL);
-  } else {
+  if (!longURL) {
     res.statusCode = 404;
-    res.send('URL not found');
+    return res.send('URL not found');
   }
+  res.redirect(longURL);
 });
 
 // POST route that removes a URL
@@ -95,8 +89,7 @@ app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id]) {
     delete urlDatabase[id];
-    res.redirect('/urls');
-    return;
+    return res.redirect('/urls');
   }
 });
 
@@ -106,31 +99,46 @@ app.post('/urls/:id', (req, res) => {
   const newLongURL = req.body.longURL;
   if (urlDatabase[id]) {
     urlDatabase[id] = newLongURL;
-    res.redirect('/urls');
-    return;
+    return res.redirect('/urls');
   }
+});
+
+// Login page get route
+app.get('/login', (req, res) => {
+  const id = req.cookies.user_id;
+  const user = users[id];
+  const templateVars = {
+    user: user
+  };
+  res.render('login', templateVars);
 });
 
 // The Login Route
 app.post('/login', (req, res) => {
-  const { username } = req.body;
-  if (username) {
-    res.cookie('username', username); // set the username cookie
-    res.redirect('/urls');
-  } else {
-    res.status(400).send('Username is required');
+  const { email, password } = req.body;
+  const user = getUserByEmail(email);
+  if (!user || user.password !== password) {
+    return res.status(403).send('Invalid email/password');
   }
+
+  res.cookie('user_id', user.id); // set the userRandomID cookie
+  res.redirect('/urls');
 });
 
 // logout route
 app.post('/logout', (req, res) => {
-  res.clearCookie('username'); // clears/deletes the username cookie
-  res.redirect('/urls');
+  res.clearCookie('user_id'); // clears/deletes the userRandomID cookie
+  res.redirect('/login');
 });
 
 // registration route
 app.get('/register', (req, res) => {
-  res.render('register');
+  const id = req.cookies.user_id;
+  const user = users[id];
+  const templateVars = {
+    user: user
+  };
+  res.render('register', templateVars);
 });
 
 // post route to handle registration
@@ -139,25 +147,18 @@ app.post('/register', (req, res) => {
   if (!email || !password) {
     return res.status(400).send('Please provide an email and a password');
   }
-
+  
   const existingUser = getUserByEmail(email);
   if (existingUser) {
     return res.status(400).send('Email already exist');
   }
-
-  const userRandomID = generateRandomString();
-  const user = {
-    id: userRandomID,
-    email: email,
-    password: password
-  };
-
-  users[userRandomID] = user;
-  res.cookie('username', userRandomID);
+  
+  const id = generateRandomString();
+  const user = { id, email, password };
+  
+  users[id] = user;
+  console.log(users);
+  res.cookie('user_id', id);
   res.redirect('/urls');
 });
 
-// Login page get route
-app.get('/login', (req, res) => {
-  res.render('login')
-})
