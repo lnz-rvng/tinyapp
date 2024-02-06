@@ -117,6 +117,10 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = getUserByEmail(email);
+  if (!email || !password) {
+    return res.status(400).send('Please provide an email/password');
+  }
+
   if (!user || user.password !== password) {
     return res.status(403).send('Invalid email/password');
   }
