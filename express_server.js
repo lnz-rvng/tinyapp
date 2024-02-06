@@ -156,3 +156,8 @@ app.post('/register', (req, res) => {
   res.cookie('username', userRandomID);
   res.redirect('/urls');
 });
+
+// Login page get route
+app.get('/login', (req, res) => {
+  res.render('login')
+})
