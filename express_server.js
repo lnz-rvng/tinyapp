@@ -115,6 +115,7 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls');
 });
 
+// registration route
 app.get('/register', (req, res) => {
   res.render('register')
 })
