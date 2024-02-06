@@ -50,6 +50,9 @@ app.get('/urls/new', (req, res) => {
     user: user
   };
 
+  if (!id) {
+    return res.redirect('/login')
+  }
   res.render('urls_new', templateVars);
 });
 
@@ -68,6 +71,11 @@ app.get('/urls/:id', (req, res) => {
 
 // Added a POST route to receive the form submission
 app.post('/urls', (req, res) => {
+  const id = req.cookies.user_id;
+  if (!id) {
+    return res.status(401).send('You must be logged in to shorten URLs');
+  }
+
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = longURL;
@@ -76,11 +84,12 @@ app.post('/urls', (req, res) => {
 
 // redirect short URLs
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const shortURL = req.params.id;
+  const longURL = urlDatabase[shortURL];
   if (!longURL) {
-    res.statusCode = 404;
-    return res.send('URL not found');
+    return res.status(404).send('404 not found');
   }
+
   res.redirect(longURL);
 });
 
@@ -110,6 +119,11 @@ app.get('/login', (req, res) => {
   const templateVars = {
     user: user
   };
+
+  if (id) {
+    return res.redirect('/urls');
+  }
+
   res.render('login', templateVars);
 });
 
@@ -142,6 +156,11 @@ app.get('/register', (req, res) => {
   const templateVars = {
     user: user
   };
+
+  if (id) {
+    return res.redirect('/urls');
+  }
+
   res.render('register', templateVars);
 });
 
