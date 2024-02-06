@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const { generateRandomString } = require('./randomString');
 const { urlDatabase } = require('./database');
+const { users } = require('./users');
 const app = express();
 const PORT = 8080;
 
@@ -28,11 +29,13 @@ app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
+
 // added a new route handler for urls
 app.get('/urls', (req, res) => {
+  const user = users[req.cookies.username];
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: user
   };
 
   res.render('urls_index', templateVars);
@@ -40,8 +43,9 @@ app.get('/urls', (req, res) => {
 
 // added a GET route to show the form
 app.get('/urls/new', (req, res) => {
+  const user = users[req.cookies.username];
   const templateVars = {
-    username: req.cookies["username"]
+    user: user
   };
 
   res.render('urls_new', templateVars);
@@ -49,10 +53,11 @@ app.get('/urls/new', (req, res) => {
 
 // Added a second route and template
 app.get('/urls/:id', (req, res) => {
+  const user = users[req.cookies.username];
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
+    user: user
   };
 
   res.render('urls_show', templateVars);
@@ -117,5 +122,27 @@ app.post('/logout', (req, res) => {
 
 // registration route
 app.get('/register', (req, res) => {
-  res.render('register')
-})
+  res.render('register');
+});
+
+// post route to handle registration
+app.post('/register', (req, res) => {
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send('Please provide an email and a password');
+  }
+
+  const userRandomID = generateRandomString();
+
+  const user = {
+    id: userRandomID,
+    email: req.body.email,
+    password: req.body.password
+  };
+
+  users[userRandomID] = user;
+  console.log(users);
+
+  res.cookie('username', userRandomID);
+  res.redirect('/urls');
+
+});
