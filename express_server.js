@@ -15,6 +15,14 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
+const getUserByEmail = (email) => {
+  for (const userID in users) {
+    if (users[userID].email === email) {
+      return users[userID];
+    }
+  }
+  return null;
+};
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -127,22 +135,24 @@ app.get('/register', (req, res) => {
 
 // post route to handle registration
 app.post('/register', (req, res) => {
-  if (!req.body.email || !req.body.password) {
+  const { email, password} = req.body;
+  if (!email || !password) {
     return res.status(400).send('Please provide an email and a password');
   }
 
-  const userRandomID = generateRandomString();
+  const existingUser = getUserByEmail(email);
+  if (existingUser) {
+    return res.status(400).send('Email already exist');
+  }
 
+  const userRandomID = generateRandomString();
   const user = {
     id: userRandomID,
-    email: req.body.email,
-    password: req.body.password
+    email: email,
+    password: password
   };
 
   users[userRandomID] = user;
-  console.log(users);
-
   res.cookie('username', userRandomID);
   res.redirect('/urls');
-
 });
