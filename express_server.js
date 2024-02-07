@@ -1,6 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { generateRandomString, getUserByEmail } = require('./helpers');
+const { generateRandomString, getUserByEmail, urlsForUser } = require('./helpers');
 const { urlDatabase, users } = require('./database');
 const app = express();
 const PORT = 8080;
@@ -13,17 +13,6 @@ app.listen(PORT, () => {
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
-
-// Function to filter URLs for a specific user
-const urlsForUser = (id) => {
-  const userURLs = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userURLs[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userURLs;
-};
 
 app.get('/', (req, res) => {
   res.send('Hello!');
@@ -53,7 +42,6 @@ app.get('/urls', (req, res) => {
     urls: userURLs,
     user: user
   };
-
 
   res.render('urls_index', templateVars);
 });
@@ -172,7 +160,7 @@ app.post('/urls/:id', (req, res) => {
   if (urlDatabase[shortURL].userID !== id) {
     return res.status(403).send('Unauthorized');
   }
-  
+
   urlDatabase[shortURL].longURL = newLongURL;
   res.redirect('/urls');
   
