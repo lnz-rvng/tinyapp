@@ -116,24 +116,19 @@ app.post('/urls', (req, res) => {
 
 // redirect short URLs
 app.get("/u/:id", (req, res) => {
-  const id = req.cookies.user_id;
   const shortURL = req.params.id;
-  const longURL = urlDatabase[shortURL];
-  if (!longURL) {
-    return res.status(404).send('404 not found');
-  }
-
+  console.log(shortURL)
+  console.log(urlDatabase)
+  
   if (!shortURL) {
     return res.status(404).send('ID does not exist');
   }
 
-  if (!id) {
-    return res.status(401).send('User is not logged in');
+  if (!urlDatabase[shortURL]) {
+    return res.status(404).send('404 not found');
   }
-
-  if (urlDatabase[shortURL].userID !== id) {
-    return res.status(403).send('Unauthorized');
-  }
+  
+  const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -162,12 +157,25 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // POST route that updates a URL
 app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
+  const id = req.cookies.user_id;
+  const shortURL = req.params.id;
   const newLongURL = req.body.longURL;
-  if (urlDatabase[id].longURL) {
-    urlDatabase[id].longURL = newLongURL;
-    return res.redirect('/urls');
+
+  if (!id) {
+    return res.status(401).send('User is not logged in');
   }
+
+  if (!shortURL) {
+    return res.status(404).send('ID does not exist');
+  }
+
+  if (urlDatabase[shortURL].userID !== id) {
+    return res.status(403).send('Unauthorized');
+  }
+  
+  urlDatabase[shortURL].longURL = newLongURL;
+  res.redirect('/urls');
+  
 });
 
 // Login page get route
