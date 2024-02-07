@@ -14,6 +14,16 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
+// Function to filter URLs for a specific user
+const urlsForUser = (id) => {
+  const userURLs = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userURLs[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userURLs;
+};
 
 app.get('/', (req, res) => {
   res.send('Hello!');
@@ -33,15 +43,17 @@ app.get('/hello', (req, res) => {
 // added a new route handler for urls
 app.get('/urls', (req, res) => {
   const id = req.cookies.user_id;
-  const user = users[id];
-  const templateVars = {
-    urls: urlDatabase,
-    user: user
-  };
-
   if (!id) {
     return res.status(401).send('Log in/Register first!')
   }
+
+  const user = users[id];
+  const userURLs = urlsForUser(id);
+  const templateVars = {
+    urls: userURLs,
+    user: user
+  };
+
 
   res.render('urls_index', templateVars);
 });
@@ -63,10 +75,26 @@ app.get('/urls/new', (req, res) => {
 // Added a second route and template
 app.get('/urls/:id', (req, res) => {
   const id = req.cookies.user_id;
+  const shortURL = req.params.id;
   const user = users[id];
+  // Check if user is logged in
+  if (!id) {
+    return res.status(401).send('Log in/Register first!');
+  }
+
+  // Check if the requested URL exists
+  if (!urlDatabase[shortURL]) {
+    return res.status(404).send('URL not found');
+  }
+
+  // Check if the requested URL belongs to the logged-in user
+  if (urlDatabase[shortURL].userID !== id) {
+    return res.status(403).send('Unauthorized');
+  }
+
   const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id].longURL,
+    id: shortURL,
+    longURL: urlDatabase[shortURL].longURL,
     user: user
   };
 
@@ -88,20 +116,46 @@ app.post('/urls', (req, res) => {
 
 // redirect short URLs
 app.get("/u/:id", (req, res) => {
+  const id = req.cookies.user_id;
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL];
   if (!longURL) {
     return res.status(404).send('404 not found');
   }
 
+  if (!shortURL) {
+    return res.status(404).send('ID does not exist');
+  }
+
+  if (!id) {
+    return res.status(401).send('User is not logged in');
+  }
+
+  if (urlDatabase[shortURL].userID !== id) {
+    return res.status(403).send('Unauthorized');
+  }
   res.redirect(longURL);
 });
 
 // POST route that removes a URL
 app.post('/urls/:id/delete', (req, res) => {
-  const id = req.params.id;
-  if (urlDatabase[id].longURL) {
-    delete urlDatabase[id].longURL;
+  const id = req.cookies.user_id;
+  const shortURL = req.params.id;
+
+  if (!shortURL) {
+    return res.status(404).send('ID does not exist');
+  }
+
+  if (!id) {
+    return res.status(401).send('User is not logged in');
+  }
+
+  if (urlDatabase[shortURL].userID !== id) {
+    return res.status(403).send('Unauthorized');
+  }
+
+  if (urlDatabase[shortURL].longURL) {
+    delete urlDatabase[shortURL];
     return res.redirect('/urls');
   }
 });
