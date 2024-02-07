@@ -1,5 +1,6 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 const { generateRandomString, getUserByEmail, urlsForUser } = require('./helpers');
 const { urlDatabase, users } = require('./database');
 const app = express();
@@ -184,12 +185,13 @@ app.get('/login', (req, res) => {
 // The Login Route
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10) 
   const user = getUserByEmail(email);
   if (!email || !password) {
     return res.status(400).send('Please provide an email/password');
   }
 
-  if (!user || user.password !== password) {
+  if (!user || hashedPassword !== hashedPassword) {
     return res.status(403).send('Invalid email/password');
   }
 
@@ -221,6 +223,7 @@ app.get('/register', (req, res) => {
 // post route to handle registration
 app.post('/register', (req, res) => {
   const { email, password} = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10) 
   if (!email || !password) {
     return res.status(400).send('Please provide an email and a password');
   }
@@ -231,11 +234,12 @@ app.post('/register', (req, res) => {
   }
   
   const id = generateRandomString();
-  const user = { id, email, password };
+  const user = { id, email, hashedPassword };
   
   users[id] = user;
   console.log(users);
   res.cookie('user_id', id);
   res.redirect('/urls');
 });
+
 
