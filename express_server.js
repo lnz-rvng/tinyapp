@@ -185,13 +185,12 @@ app.get('/login', (req, res) => {
 // The Login Route
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10) 
   const user = getUserByEmail(email);
   if (!email || !password) {
     return res.status(400).send('Please provide an email/password');
   }
 
-  if (!user || hashedPassword !== hashedPassword) {
+  if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
     return res.status(403).send('Invalid email/password');
   }
 
