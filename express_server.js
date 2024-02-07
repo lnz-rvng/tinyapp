@@ -39,6 +39,10 @@ app.get('/urls', (req, res) => {
     user: user
   };
 
+  if (!id) {
+    return res.status(401).send('Log in/Register first!')
+  }
+
   res.render('urls_index', templateVars);
 });
 
@@ -62,7 +66,7 @@ app.get('/urls/:id', (req, res) => {
   const user = users[id];
   const templateVars = {
     id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    longURL: urlDatabase[req.params.id].longURL,
     user: user
   };
 
@@ -71,14 +75,14 @@ app.get('/urls/:id', (req, res) => {
 
 // Added a POST route to receive the form submission
 app.post('/urls', (req, res) => {
-  const id = req.cookies.user_id;
-  if (!id) {
+  const userID = req.cookies.user_id;
+  if (!userID) {
     return res.status(401).send('You must be logged in to shorten URLs');
   }
 
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = { longURL, userID };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -96,8 +100,8 @@ app.get("/u/:id", (req, res) => {
 // POST route that removes a URL
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
-  if (urlDatabase[id]) {
-    delete urlDatabase[id];
+  if (urlDatabase[id].longURL) {
+    delete urlDatabase[id].longURL;
     return res.redirect('/urls');
   }
 });
@@ -106,8 +110,8 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   const newLongURL = req.body.longURL;
-  if (urlDatabase[id]) {
-    urlDatabase[id] = newLongURL;
+  if (urlDatabase[id].longURL) {
+    urlDatabase[id].longURL = newLongURL;
     return res.redirect('/urls');
   }
 });
