@@ -189,7 +189,7 @@ app.get('/login', (req, res) => {
 // The Login Route
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
   if (!email || !password) {
     return res.status(400).send('Please provide an email/password');
   }
