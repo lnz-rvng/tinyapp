@@ -1,4 +1,4 @@
-const { users, urlDatabase } = require('./database');
+const { usersDatabase, urlDatabase } = require('./database');
 
 // generate a short random url id
 const generateRandomString = () => {
@@ -14,9 +14,9 @@ const generateRandomString = () => {
 
 // used for authentication
 const getUserByEmail = (email, users) => {
-  for (const userID in users) {
-    if (users[userID].email === email) {
-      return users[userID];
+  for (const userID in usersDatabase) {
+    if (usersDatabase[userID].email === email) {
+      return usersDatabase[userID];
     }
   }
 };
