@@ -1,5 +1,5 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const { generateRandomString, getUserByEmail, urlsForUser } = require('./helpers');
 const { urlDatabase, users } = require('./database');
@@ -11,7 +11,11 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
 });
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['secret'],
+}));
+
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
@@ -32,7 +36,7 @@ app.get('/hello', (req, res) => {
 
 // added a new route handler for urls
 app.get('/urls', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   if (!id) {
     return res.status(401).send('Log in/Register first!')
   }
@@ -49,7 +53,7 @@ app.get('/urls', (req, res) => {
 
 // added a GET route to show the form
 app.get('/urls/new', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   const user = users[id];
   const templateVars = {
     user: user
@@ -63,7 +67,7 @@ app.get('/urls/new', (req, res) => {
 
 // Added a second route and template
 app.get('/urls/:id', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   const shortURL = req.params.id;
   const user = users[id];
   // Check if user is logged in
@@ -92,7 +96,7 @@ app.get('/urls/:id', (req, res) => {
 
 // Added a POST route to receive the form submission
 app.post('/urls', (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   if (!userID) {
     return res.status(401).send('You must be logged in to shorten URLs');
   }
@@ -123,7 +127,7 @@ app.get("/u/:id", (req, res) => {
 
 // POST route that removes a URL
 app.post('/urls/:id/delete', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   const shortURL = req.params.id;
 
   if (!shortURL) {
@@ -146,7 +150,7 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // POST route that updates a URL
 app.post('/urls/:id', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   const shortURL = req.params.id;
   const newLongURL = req.body.longURL;
 
@@ -169,7 +173,7 @@ app.post('/urls/:id', (req, res) => {
 
 // Login page get route
 app.get('/login', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   const user = users[id];
   const templateVars = {
     user: user
@@ -194,19 +198,19 @@ app.post('/login', (req, res) => {
     return res.status(403).send('Invalid email/password');
   }
 
-  res.cookie('user_id', user.id); // set the userRandomID cookie
+  req.session.user_id = user.id // set the userRandomID cookie
   res.redirect('/urls');
 });
 
 // logout route
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id'); // clears/deletes the userRandomID cookie
+  req.session = null; // clears/deletes the userRandomID cookie
   res.redirect('/login');
 });
 
 // registration route
 app.get('/register', (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   const user = users[id];
   const templateVars = {
     user: user
@@ -237,7 +241,7 @@ app.post('/register', (req, res) => {
   
   users[id] = user;
   console.log(users);
-  res.cookie('user_id', id);
+  req.session.user_id = id;
   res.redirect('/urls');
 });
 
