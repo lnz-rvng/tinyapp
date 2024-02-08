@@ -9,7 +9,7 @@ const urlDatabase = {
   },
 };
 
-const users = {
+const usersDatabase = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
