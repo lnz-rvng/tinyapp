@@ -25,11 +25,11 @@ app.set('view engine', 'ejs'); // setting ejs as the view engine
 app.get('/', (req, res) => {
   const id = req.session.user_id;
 
-  if(!id) {
+  if (!id) {
     return res.redirect('/login');
   }
 
-  res.redirect('/urls')
+  res.redirect('/urls');
 });
 
 // added route - /urls.json
@@ -42,7 +42,7 @@ app.get('/urls', (req, res) => {
   const id = req.session.user_id;
   // check if you're logged in first
   if (!id) {
-    return res.status(401).send('Log in/Register first!')
+    return res.status(403).send('Log in/Register first!');
   }
 
   const user = users[id];
@@ -66,7 +66,7 @@ app.get('/urls/new', (req, res) => {
 
   // check if you're logged in first
   if (!id) {
-    return res.redirect('/login')
+    return res.redirect('/login');
   }
 
   // if logged in, it will render the urls_new page
@@ -75,25 +75,25 @@ app.get('/urls/new', (req, res) => {
 
 // GET route to /urls/:id
 app.get('/urls/:id', (req, res) => {
-  const id = req.session.user_id;
-  const shortURL = req.params.id;
-  const user = users[id];
-
+  const userID = req.session.user_id;
   // Check if user is logged in
-  if (!id) {
-    return res.status(401).send('Log in/Register first!');
+  if (!userID) {
+    return res.status(403).send('Log in/Register first!');
   }
-
+  
+  const shortURL = req.params.id;
   // Check if the requested URL exists - (req.params.id)
   if (!urlDatabase[shortURL]) {
     return res.status(404).send('URL not found');
   }
 
-  // Check if the requested URL belongs to the logged-in user
-  if (urlDatabase[shortURL].userID !== id) {
-    return res.status(401).send('Unauthorized');
+  if (urlDatabase[shortURL].userID !== userID) {
+    return res.status(403).send('Unauthorized');
   }
 
+  // Check if the requested URL belongs to the logged-in user
+
+  const user = users[userID];
   const templateVars = {
     id: shortURL,
     longURL: urlDatabase[shortURL].longURL,
@@ -107,14 +107,14 @@ app.get('/urls/:id', (req, res) => {
 app.post('/urls', (req, res) => {
   const userID = req.session.user_id;
   if (!userID) {
-    return res.status(401).send('You must be logged in to shorten URLs');
+    return res.status(403).send('You must be logged in to shorten URLs');
   }
 
   let longURL = req.body.longURL;
 
   // checks if the form submitted has an http protocol on it, if not, we append it on the start
   if (!longURL.includes('http')) {
-    longURL = "http://" + longURL
+    longURL = "http://" + longURL;
   }
 
   const shortURL = generateRandomString();
@@ -145,7 +145,7 @@ app.post('/urls/:id/delete', (req, res) => {
   }
 
   if (!id) {
-    return res.status(401).send('User is not logged in');
+    return res.status(403).send('User is not logged in');
   }
 
   if (urlDatabase[shortURL].userID !== id) {
@@ -164,10 +164,10 @@ app.post('/urls/:id', (req, res) => {
 
   // check if a user is logged in
   if (!id) {
-    return res.status(401).send('User is not logged in');
+    return res.status(403).send('User is not logged in');
   }
 
-  // check if the URL exists 
+  // check if the URL exists
   if (!shortURL) {
     return res.status(404).send('ID does not exist');
   }
@@ -177,12 +177,13 @@ app.post('/urls/:id', (req, res) => {
   }
 
   let newLongURL = req.body.longURL;
-  
+
   // checks if the form submitted has an http protocol on it, if not, we append it on the start
   if (!newLongURL.includes('http')) {
-    newLongURL = "http://" + newLongURL
+    newLongURL = "http://" + newLongURL;
   }
 
+  
   urlDatabase[shortURL].longURL = newLongURL;
   res.redirect('/urls');
 });
@@ -214,11 +215,11 @@ app.post('/login', (req, res) => {
   const user = getUserByEmail(email, users);
 
   // Checks wether you inputted a valid email or a password
-  if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
+  if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.status(403).send('Invalid email/password');
   }
 
-  req.session.user_id = user.id // set the userRandomID cookie
+  req.session.user_id = user.id; // set the userRandomID cookie
   res.redirect('/urls');
 });
 
@@ -252,8 +253,8 @@ app.post('/register', (req, res) => {
     return res.status(400).send('Please provide an email and a password');
   }
 
-  const hashedPassword = bcrypt.hashSync(password, 10) 
-  const existingUser = getUserByEmail(email);
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const existingUser = getUserByEmail(email, users);
 
   // check if the email already exist
   if (existingUser) {
@@ -262,7 +263,7 @@ app.post('/register', (req, res) => {
   
   // generate some random strings to set as cookie
   const id = generateRandomString();
-  const user = { id, email, hashedPassword };
+  const user = { id, email, password: hashedPassword };
   
   users[id] = user;
 
