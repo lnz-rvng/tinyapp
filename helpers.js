@@ -19,7 +19,7 @@ const getUserByEmail = (email, users) => {
       return users[userID];
     }
   }
-  return null;
+  return;
 };
 
 // Function to filter URLs for a specific user
