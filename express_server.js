@@ -23,9 +23,9 @@ app.use(express.json());
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
 app.get('/', (req, res) => {
-  const id = req.session.user_id;
+  const userID = req.session.user_id;
 
-  if (!id) {
+  if (!userID) {
     return res.redirect('/login');
   }
 
@@ -39,14 +39,14 @@ app.get('/urls.json', (req, res) => {
 
 // GET route to show the urls
 app.get('/urls', (req, res) => {
-  const id = req.session.user_id;
+  const userID = req.session.user_id;
   // check if you're logged in first
-  if (!id) {
+  if (!userID) {
     return res.status(403).send('Log in/Register first!');
   }
 
-  const user = users[id];
-  const userURLs = urlsForUser(id);
+  const user = users[userID];
+  const userURLs = urlsForUser(userID);
   const templateVars = {
     urls: userURLs,
     user: user
@@ -58,17 +58,16 @@ app.get('/urls', (req, res) => {
 
 // GET route to show the submit a URL form
 app.get('/urls/new', (req, res) => {
-  const id = req.session.user_id;
-  const user = users[id];
+  const userID = req.session.user_id;
+  // check if you're logged in first
+  if (!userID) {
+    return res.redirect('/login');
+  }
+  
+  const user = users[userID];
   const templateVars = {
     user: user
   };
-
-  // check if you're logged in first
-  if (!id) {
-    return res.redirect('/login');
-  }
-
   // if logged in, it will render the urls_new page
   res.render('urls_new', templateVars);
 });
@@ -137,18 +136,18 @@ app.get("/u/:id", (req, res) => {
 
 // POST route that removes/deletes a URL
 app.post('/urls/:id/delete', (req, res) => {
-  const id = req.session.user_id;
+  const userID = req.session.user_id;
+  if (!userID) {
+    return res.status(403).send('User is not logged in');
+  }
+  
   const shortURL = req.params.id;
-
   if (!shortURL) {
     return res.status(404).send('ID does not exist');
   }
 
-  if (!id) {
-    return res.status(403).send('User is not logged in');
-  }
 
-  if (urlDatabase[shortURL].userID !== id) {
+  if (urlDatabase[shortURL].userID !== userID) {
     return res.status(403).send('Unauthorized');
   }
 
@@ -158,45 +157,41 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // POST route that updates a URL
 app.post('/urls/:id', (req, res) => {
-  const id = req.session.user_id;
-  const shortURL = req.params.id;
-  
-
+  const userID = req.session.user_id;
   // check if a user is logged in
-  if (!id) {
+  if (!userID) {
     return res.status(403).send('User is not logged in');
   }
 
+  const shortURL = req.params.id;
   // check if the URL exists
   if (!shortURL) {
     return res.status(404).send('ID does not exist');
   }
 
-  if (urlDatabase[shortURL].userID !== id) {
+  if (urlDatabase[shortURL].userID !== userID) {
     return res.status(403).send('Unauthorized');
   }
 
   let newLongURL = req.body.longURL;
-
   // checks if the form submitted has an http protocol on it, if not, we append it on the start
   if (!newLongURL.includes('http')) {
     newLongURL = "http://" + newLongURL;
   }
 
-  
   urlDatabase[shortURL].longURL = newLongURL;
   res.redirect('/urls');
 });
 
 // Login page get route
 app.get('/login', (req, res) => {
-  const id = req.session.user_id;
-  const user = users[id];
+  const userID = req.session.user_id;
+  const user = users[userID];
   const templateVars = {
     user: user
   };
 
-  if (id) {
+  if (userID) {
     return res.redirect('/urls');
   }
 
@@ -231,14 +226,14 @@ app.post('/logout', (req, res) => {
 
 // GET route to the registration form
 app.get('/register', (req, res) => {
-  const id = req.session.user_id;
-  const user = users[id];
+  const userID = req.session.user_id;
+  const user = users[userID];
   const templateVars = {
     user: user
   };
 
   // automatically logged you in after a succesful registration
-  if (id) {
+  if (userID) {
     return res.redirect('/urls');
   }
 
@@ -262,12 +257,12 @@ app.post('/register', (req, res) => {
   }
   
   // generate some random strings to set as cookie
-  const id = generateRandomString();
-  const user = { id, email, password: hashedPassword };
+  const userID = generateRandomString();
+  const user = { id: userID, email, password: hashedPassword };
   
-  users[id] = user;
+  users[userID] = user;
 
-  req.session.user_id = id; // setting the cookie
+  req.session.user_id = userID; // setting the cookie
   res.redirect('/urls');
 });
 
