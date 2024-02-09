@@ -6,6 +6,7 @@ const { urlDatabase, users } = require('./database');
 const app = express();
 const PORT = 8080;
 
+
 // connects to the port
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`); // keeps track of what port we're connected
@@ -13,14 +14,22 @@ app.listen(PORT, () => {
 
 app.use(cookieSession({
   name: 'session',
-  keys: ['secret'],
+  keys: ['abc', 'def', 'ghi'],
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
 }));
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 app.set('view engine', 'ejs'); // setting ejs as the view engine
 
 app.get('/', (req, res) => {
-  res.send('Hello!');
+  const id = req.session.user_id;
+
+  if(!id) {
+    return res.redirect('/login');
+  }
+
+  res.redirect('/urls')
 });
 
 // added route - /urls.json
@@ -28,15 +37,10 @@ app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
 
-// added a new route = /hello
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n');
-});
-
-
-// added a new route handler for urls
+// GET route to show the urls
 app.get('/urls', (req, res) => {
   const id = req.session.user_id;
+  // check if you're logged in first
   if (!id) {
     return res.status(401).send('Log in/Register first!')
   }
@@ -48,10 +52,11 @@ app.get('/urls', (req, res) => {
     user: user
   };
 
+  // if logged in, it will render the urls_index page
   res.render('urls_index', templateVars);
 });
 
-// added a GET route to show the form
+// GET route to show the submit a URL form
 app.get('/urls/new', (req, res) => {
   const id = req.session.user_id;
   const user = users[id];
@@ -59,30 +64,34 @@ app.get('/urls/new', (req, res) => {
     user: user
   };
 
+  // check if you're logged in first
   if (!id) {
     return res.redirect('/login')
   }
+
+  // if logged in, it will render the urls_new page
   res.render('urls_new', templateVars);
 });
 
-// Added a second route and template
+// GET route to /urls/:id
 app.get('/urls/:id', (req, res) => {
   const id = req.session.user_id;
   const shortURL = req.params.id;
   const user = users[id];
+
   // Check if user is logged in
   if (!id) {
     return res.status(401).send('Log in/Register first!');
   }
 
-  // Check if the requested URL exists
+  // Check if the requested URL exists - (req.params.id)
   if (!urlDatabase[shortURL]) {
     return res.status(404).send('URL not found');
   }
 
   // Check if the requested URL belongs to the logged-in user
   if (urlDatabase[shortURL].userID !== id) {
-    return res.status(403).send('Unauthorized');
+    return res.status(401).send('Unauthorized');
   }
 
   const templateVars = {
@@ -94,29 +103,30 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
-// Added a POST route to receive the form submission
+// POST route to receive the form submission
 app.post('/urls', (req, res) => {
   const userID = req.session.user_id;
   if (!userID) {
     return res.status(401).send('You must be logged in to shorten URLs');
   }
 
-  const longURL = req.body.longURL;
+  let longURL = req.body.longURL;
+
+  // checks if the form submitted has an http protocol on it, if not, we append it on the start
+  if (!longURL.includes('http')) {
+    longURL = "http://" + longURL
+  }
+
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL, userID };
   res.redirect(`/urls/${shortURL}`);
 });
 
-// redirect short URLs
+// GET route to redirect original URL
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
-  console.log(shortURL)
-  console.log(urlDatabase)
-  
-  if (!shortURL) {
-    return res.status(404).send('ID does not exist');
-  }
 
+  // checks if the shortURL exist in teh database
   if (!urlDatabase[shortURL]) {
     return res.status(404).send('404 not found');
   }
@@ -125,7 +135,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
-// POST route that removes a URL
+// POST route that removes/deletes a URL
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.session.user_id;
   const shortURL = req.params.id;
@@ -142,22 +152,22 @@ app.post('/urls/:id/delete', (req, res) => {
     return res.status(403).send('Unauthorized');
   }
 
-  if (urlDatabase[shortURL].longURL) {
-    delete urlDatabase[shortURL];
-    return res.redirect('/urls');
-  }
+  delete urlDatabase[shortURL];
+  res.redirect('/urls');
 });
 
 // POST route that updates a URL
 app.post('/urls/:id', (req, res) => {
   const id = req.session.user_id;
   const shortURL = req.params.id;
-  const newLongURL = req.body.longURL;
+  
 
+  // check if a user is logged in
   if (!id) {
     return res.status(401).send('User is not logged in');
   }
 
+  // check if the URL exists 
   if (!shortURL) {
     return res.status(404).send('ID does not exist');
   }
@@ -166,9 +176,15 @@ app.post('/urls/:id', (req, res) => {
     return res.status(403).send('Unauthorized');
   }
 
+  let newLongURL = req.body.longURL;
+  
+  // checks if the form submitted has an http protocol on it, if not, we append it on the start
+  if (!newLongURL.includes('http')) {
+    newLongURL = "http://" + newLongURL
+  }
+
   urlDatabase[shortURL].longURL = newLongURL;
   res.redirect('/urls');
-  
 });
 
 // Login page get route
@@ -186,14 +202,18 @@ app.get('/login', (req, res) => {
   res.render('login', templateVars);
 });
 
-// The Login Route
+// POST route for logging in
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const user = getUserByEmail(email, users);
+
+  // Check if you provided an email or a password on the form
   if (!email || !password) {
     return res.status(400).send('Please provide an email/password');
   }
 
+  const user = getUserByEmail(email, users);
+
+  // Checks wether you inputted a valid email or a password
   if (!user || !bcrypt.compareSync(password, user.hashedPassword)) {
     return res.status(403).send('Invalid email/password');
   }
@@ -202,13 +222,13 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-// logout route
+// POST route for logging out
 app.post('/logout', (req, res) => {
   req.session = null; // clears/deletes the userRandomID cookie
   res.redirect('/login');
 });
 
-// registration route
+// GET route to the registration form
 app.get('/register', (req, res) => {
   const id = req.session.user_id;
   const user = users[id];
@@ -216,6 +236,7 @@ app.get('/register', (req, res) => {
     user: user
   };
 
+  // automatically logged you in after a succesful registration
   if (id) {
     return res.redirect('/urls');
   }
@@ -223,25 +244,29 @@ app.get('/register', (req, res) => {
   res.render('register', templateVars);
 });
 
-// post route to handle registration
+// POST route to handle registration
 app.post('/register', (req, res) => {
   const { email, password} = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10) 
+
   if (!email || !password) {
     return res.status(400).send('Please provide an email and a password');
   }
-  
+
+  const hashedPassword = bcrypt.hashSync(password, 10) 
   const existingUser = getUserByEmail(email);
+
+  // check if the email already exist
   if (existingUser) {
     return res.status(400).send('Email already exist');
   }
   
+  // generate some random strings to set as cookie
   const id = generateRandomString();
   const user = { id, email, hashedPassword };
   
   users[id] = user;
-  console.log(users);
-  req.session.user_id = id;
+
+  req.session.user_id = id; // setting the cookie
   res.redirect('/urls');
 });
 
